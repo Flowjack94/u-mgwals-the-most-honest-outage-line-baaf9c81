@@ -28,7 +28,30 @@ def validate_entry(text: str) -> str:
         raise ValueError("entry must not be only whitespace")
     if "\n" in text or "\r" in text:
         raise ValueError("entry must be a single line")
+    if text != text.strip():
+        raise ValueError("entry must not have leading or trailing whitespace")
+    for ch in text:
+        code = ord(ch)
+        if (code < 0x20 and ch not in ("\t", "\n")) or code == 0x7F:
+            raise ValueError(f"entry must not contain control character U+{code:04X}")
     return text
+
+
+def run_self_tests() -> None:
+    """Negative self-tests for validate_entry(): each bad input must raise
+    ValueError. Raises AssertionError if any case wrongly passes."""
+    cases = [
+        ("control character", "We are down.\x07 All 14 servers stopped answering."),
+        ("over 160 chars", "x" * 161),
+    ]
+    for name, bad in cases:
+        try:
+            validate_entry(bad)
+        except ValueError:
+            print(f"self-test passed: {name} rejected")
+        else:
+            raise AssertionError(f"self-test FAILED: {name} was accepted")
+    print(f"self-tests: {len(cases)}/{len(cases)} passed")
 
 
 def main() -> None:
@@ -46,4 +69,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
+    run_self_tests()
     main()
